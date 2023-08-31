@@ -1,0 +1,35 @@
+if (temperatura >= 10.0 && temperatura <= 18.0) { // Se fija el rango de funcionamiento para el rango del led verde
+    dutycycleV = map(temperatura, 10.0, 18.0, 77, 255); // de 10.0 a 18.0 °C
+    dutycycleA = 0;
+    dutycycleR = 0;
+    Serial.print(dutycycleV);
+    Serial.println(" ");
+    giroServo = map(dutycycleV, 77, 255, 125, 93); // Se hace una equivalencia del brillo obtenido para el led para el angulo del servo entre 0 y 75 
+    ledcWrite(canalVerde, dutycycleV); // Control del brillo del led verde con el pwm
+    ledcWrite(canalAmarillo, dutycycleA);
+    ledcWrite(canalRojo, dutycycleR);
+    }
+
+    else if (temperatura > 18.0 && temperatura < 21.0) { // Se realiza el mapeo con una función algebráica para el rango de temperatura del led amarillo
+    dutycycleA = (temperatura - 18.1) * (255 - 77) / (20.9 - 18.0) + 77; // De 18.1 grados a 20.9 °C
+    dutycycleV = 0;
+    dutycycleR = 0;
+    Serial.print(dutycycleA);
+    Serial.println(" ");
+    giroServo = map(dutycycleA, 77, 255, 92, 59); // Se realiza el mapeo para el led amarillo y los ángulos de giro en este rango para el servo
+    ledcWrite(canalVerde, dutycycleV); // Control del brillo del led amarillo con el pwm
+    ledcWrite(canalAmarillo, dutycycleA);
+    ledcWrite(canalRojo, dutycycleR);
+    }
+
+    else if (temperatura >= 21.0 && temperatura < 37.5) { //Se establece el rango de temperaturas para el led rojo y los grados de giro totales hasta 180 para el servo
+    dutycycleR = map(temperatura, 21.0, 37.5, 77, 255); 
+    dutycycleV = 0;
+    dutycycleA = 0;
+    Serial.print(dutycycleR);
+    Serial.println(" ");
+    giroServo = map(dutycycleR, 77, 255, 58, 25); // Mapeo del giro del servo con respecto al brillo para el led rojo
+    ledcWrite(canalVerde, dutycycleV); 
+    ledcWrite(canalAmarillo, dutycycleA);
+    ledcWrite(canalRojo, dutycycleR); // Control del brillo del led rojo con el pwm
+    }
