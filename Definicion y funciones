@@ -1,0 +1,134 @@
+void configurarPWM(void); // Creación de funciones a utilizar para configuración y mostar cada valor de la temperautra
+void configurarDisplays(void);
+void mostrarNumero(int numero);
+
+configurarPWM(); // Ejecución  de funciones de comfiguración previamente definidos
+configurarDisplays();
+
+void configurarPWM(void) // Función para manejo de leds con PWM, con el canal, la frecuencia y la resolución
+{
+
+ledcSetup(canalRojo, freqPWM, resolution);
+ledcSetup(canalVerde, freqPWM1, resolution);
+ledcSetup(canalAmarillo, freqPWM2, resolution);
+
+ledcAttachPin(pinRojo, canalRojo); // Asignación a los pines de los canales con los pines del ESP32
+ledcAttachPin(pinVerde, canalVerde);
+ledcAttachPin(pinAmarillo, canalAmarillo);
+}
+
+void configurarDisplays(void) // Función de definición para el set up de los pines del ESP32 como salidas para los segmentos de los displays
+{
+
+pinMode(pinA, OUTPUT);
+pinMode(pinB, OUTPUT);
+pinMode(pinC, OUTPUT);
+pinMode(pinD, OUTPUT);
+pinMode(pinE, OUTPUT);
+pinMode(pinF, OUTPUT);
+pinMode(pinG, OUTPUT);
+
+digitalWrite(pinA, LOW); // En el set up, todos los segmentos están apagados
+digitalWrite(pinB, LOW);
+digitalWrite(pinC, LOW);
+digitalWrite(pinD, LOW);
+digitalWrite(pinE, LOW);
+digitalWrite(pinF, LOW);
+digitalWrite(pinG, LOW);
+
+}
+
+void mostrarNumero(int numero) { //Función para lectura de dígito de decena, unidad y decimal y escritura en los displays pormedio de los cases y el switch del digito recibido
+    switch (numero) {
+        case 0:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, LOW);
+            break;
+        case 1:
+            digitalWrite(pinA, LOW);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, LOW);
+            break;
+        case 2:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, LOW);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 3:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 4:
+            digitalWrite(pinA, LOW);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 5:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, LOW);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 6:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, LOW);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 7:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, LOW);
+            break;
+        case 8:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 9:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+    }
+}
