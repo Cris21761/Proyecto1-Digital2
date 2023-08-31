@@ -1,0 +1,46 @@
+void setup(){
+  Serial.begin(115200); // Se inicia la comunicación serial para desplegar valores
+  pinMode(tomarM, INPUT); // Configuración de pines de botón y display como salida
+  pinMode(pinD0, OUTPUT);
+  pinMode(pinD1, OUTPUT);
+  pinMode(pinD2, OUTPUT);
+
+  digitalWrite(pinD0, LOW); // Se inicia con los displays apagados
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, LOW);
+  configurarPWM(); // Ejecución  de funciones de comfiguración previamente definidos
+  configurarDisplays();
+
+  channel_config.gpio_num = 27; // Definición del pin 27 como señal para control de servomotor
+  channel_config.speed_mode = LEDC_HIGH_SPEED_MODE; // Set up del PWM para el servomotor, con modo de velocidad rapido, asignación del canal 4
+  channel_config.channel = LEDC_CHANNEL_4; // Se desactivan las interrupciones, se usa el timer y se configura un ciclo inicial de 90 graods
+  channel_config.intr_type = LEDC_INTR_DISABLE;
+  channel_config.timer_sel = LEDC_TIMER_0;
+  channel_config.duty = 75;
+
+  ledc_channel_config(&channel_config); // Se asigna la configuración al canal del PWM de la librería driver/led c
+
+  ledc_timer_config_t timer_config;
+
+  timer_config.speed_mode = LEDC_HIGH_SPEED_MODE;
+  timer_config.duty_resolution = LEDC_TIMER_10_BIT; // Se utiliza una resolución de 10 bits para el servo
+  timer_config.timer_num = LEDC_TIMER_0;
+  timer_config.freq_hz = 50; // Se fija una frecuencia de pulsos de 50 por segundo
+
+  ledc_timer_config(&timer_config);
+
+  while(! Serial); // Se espera que se abra el monitor serial
+
+  Serial.print("Connecting to Adafruit IO"); // Se imprime el mensaje de bienvenida de conexión a Adafruit
+
+  io.connect(); // Función para conectar a Adafruit
+
+  while(io.status() < AIO_CONNECTED) { // Pausa para la conexión
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println();
+  Serial.println(io.statusText()); // Conexión exitosa
+
+}
