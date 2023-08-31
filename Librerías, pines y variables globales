@@ -1,0 +1,38 @@
+#include <Arduino.h> // Se incluye la librería para usar las funciones propias de Arduino
+#include "driver/ledc.h" // Se incluye la librería para uso de PWM para controlar os leds, su brillo y el servomotor
+#include "config.h" // Librería creada para el uso de adafruit con el usuario, la red y las contraseñas
+
+#define pinADC 34 // Definición de pines para entradas y salidas incluidos leds, servomotor, sensor y pines de segmentos de displays al ESP32
+#define tomarM 35 
+#define canalRojo 0 // Canal del PWM para el control de cada led de 0 al 2
+#define canalVerde 1
+#define canalAmarillo 2
+#define freqPWM 1000 // Frecuencia en Hz para cada led
+#define freqPWM1 1000 
+#define freqPWM2 500 
+#define resolution 8 // Bits de resolucion para el brillo de los leds
+#define pinRojo 5 
+#define pinVerde 19
+#define pinAmarillo 18
+#define pinD0 13
+#define pinD1 12
+#define pinD2 14
+#define pinA 22
+#define pinB 21
+#define pinC 26
+#define pinD 25
+#define pinE 32
+#define pinF 17
+#define pinG 4
+
+int adcRaw = 0; // Creación de variables globales para funciones y ejecución del código
+int estadoM = 0;
+int lastestadoM = 0;
+int dutycycleV = 0;
+int dutycycleA = 0;
+int dutycycleR = 0;
+int giroServo = 0;
+int numero;
+int decena = 0;
+int unidad = 0;
+int decimal = 0;
