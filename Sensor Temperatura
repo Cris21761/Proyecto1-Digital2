@@ -1,0 +1,329 @@
+// Cristian David Alonzo Martínez //
+// Proyecto 1 - Electrónica Digital //
+// Sensor de Temperatura //
+
+#include <Arduino.h> // Se incluye la librería para usar las funciones propias de Arduino
+#include "driver/ledc.h" // Se incluye la librería para uso de PWM para controlar os leds, su brillo y el servomotor
+#include "config.h" // Librería creada para el uso de adafruit con el usuario, la red y las contraseñas
+
+#define pinADC 34 // Definición de pines para entradas y salidas incluidos leds, servomotor, sensor y pines de segmentos de displays al ESP32
+#define tomarM 35 
+#define canalRojo 0 // Canal del PWM para el control de cada led de 0 al 2
+#define canalVerde 1
+#define canalAmarillo 2
+#define freqPWM 1000 // Frecuencia en Hz para cada led
+#define freqPWM1 1000 
+#define freqPWM2 500 
+#define resolution 8 // Bits de resolucion para el brillo de los leds
+#define pinRojo 5 
+#define pinVerde 19
+#define pinAmarillo 18
+#define pinD0 13
+#define pinD1 12
+#define pinD2 14
+#define pinA 22
+#define pinB 21
+#define pinC 26
+#define pinD 25
+#define pinE 32
+#define pinF 17
+#define pinG 4
+
+int adcRaw = 0; // Creación de variables globales para funciones y ejecución del código
+int estadoM = 0;
+int lastestadoM = 0;
+int dutycycleV = 0;
+int dutycycleA = 0;
+int dutycycleR = 0;
+int giroServo = 0;
+int numero;
+int decena = 0;
+int unidad = 0;
+int decimal = 0;
+
+ledc_channel_config_t channel_config; // Comenzar la configuración del PWM para el canal del servo motor
+
+
+void configurarPWM(void); // Creación de funciones a utilizar para configuración y mostar cada valor de la temperautra
+void configurarDisplays(void);
+void mostrarNumero(int numero);
+
+AdafruitIO_Feed *tempSus = io.feed("Sensor de Temperatura"); // Asignación del feed "Sensor de Temperatura" de Adafruit al codigo
+
+void setup(){
+  Serial.begin(115200); // Se inicia la comunicación serial para desplegar valores
+  pinMode(tomarM, INPUT); // Configuración de pines de botón y display como salida
+  pinMode(pinD0, OUTPUT);
+  pinMode(pinD1, OUTPUT);
+  pinMode(pinD2, OUTPUT);
+
+  digitalWrite(pinD0, LOW); // Se inicia con los displays apagados
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, LOW);
+  configurarPWM(); // Ejecución  de funciones de comfiguración previamente definidos
+  configurarDisplays();
+
+  channel_config.gpio_num = 27; // Definición del pin 27 como señal para control de servomotor
+  channel_config.speed_mode = LEDC_HIGH_SPEED_MODE; // Set up del PWM para el servomotor, con modo de velocidad rapido, asignación del canal 4
+  channel_config.channel = LEDC_CHANNEL_4; // Se desactivan las interrupciones, se usa el timer y se configura un ciclo inicial de 90 graods
+  channel_config.intr_type = LEDC_INTR_DISABLE;
+  channel_config.timer_sel = LEDC_TIMER_0;
+  channel_config.duty = 75;
+
+  ledc_channel_config(&channel_config); // Se asigna la configuración al canal del PWM de la librería driver/led c
+
+  ledc_timer_config_t timer_config;
+
+  timer_config.speed_mode = LEDC_HIGH_SPEED_MODE;
+  timer_config.duty_resolution = LEDC_TIMER_10_BIT; // Se utiliza una resolución de 10 bits para el servo
+  timer_config.timer_num = LEDC_TIMER_0;
+  timer_config.freq_hz = 50; // Se fija una frecuencia de pulsos de 50 por segundo
+
+  ledc_timer_config(&timer_config);
+
+  while(! Serial); // Se espera que se abra el monitor serial
+
+  Serial.print("Connecting to Adafruit IO"); // Se imprime el mensaje de bienvenida de conexión a Adafruit
+
+  io.connect(); // Función para conectar a Adafruit
+
+  while(io.status() < AIO_CONNECTED) { // Pausa para la conexión
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println();
+  Serial.println(io.statusText()); // Conexión exitosa
+
+}
+
+void loop(){
+  estadoM = digitalRead(tomarM); // Lee el estado actual del botón
+  if (estadoM == LOW && lastestadoM == HIGH) { // Si el botón se presionó en este ciclo
+    adcRaw = analogRead(pinADC); // Lee el valor analógico de 0 a 4095
+    
+    float voltaje = adcRaw * (4400 / 4095); // Convierte el valor del ADC a voltaje
+
+    float temperatura = voltaje/(10); // Convierte de voltaje a lectura de temperatura
+
+    int temp = temperatura * 10; // Se utiliza la variable temp para separar temperatura en decenas, unidades y decimal
+    
+     decena = temp / 100;
+
+    temp = temp - (decena*100);
+
+     unidad = temp / 10;
+    
+    temp = temp - (unidad*10);
+
+    decimal = temp;
+    
+    Serial.print("Temperatura: ");
+    Serial.print(temperatura); // Se imprime la lectura obtenida y calculada del sensor en °C
+    Serial.println(" °C ");
+
+
+    if (temperatura >= 10.0 && temperatura <= 18.0) { // Se fija el rango de funcionamiento para el rango del led verde
+    dutycycleV = map(temperatura, 10.0, 18.0, 77, 255); // de 10.0 a 18.0 °C
+    dutycycleA = 0;
+    dutycycleR = 0;
+    Serial.print(dutycycleV);
+    Serial.println(" ");
+    giroServo = map(dutycycleV, 77, 255, 125, 93); // Se hace una equivalencia del brillo obtenido para el led para el angulo del servo entre 0 y 75 
+    ledcWrite(canalVerde, dutycycleV); // Control del brillo del led verde con el pwm
+    ledcWrite(canalAmarillo, dutycycleA);
+    ledcWrite(canalRojo, dutycycleR);
+    }
+
+    else if (temperatura > 18.0 && temperatura < 21.0) { // Se realiza el mapeo con una función algebráica para el rango de temperatura del led amarillo
+    dutycycleA = (temperatura - 18.1) * (255 - 77) / (20.9 - 18.0) + 77; // De 18.1 grados a 20.9 °C
+    dutycycleV = 0;
+    dutycycleR = 0;
+    Serial.print(dutycycleA);
+    Serial.println(" ");
+    giroServo = map(dutycycleA, 77, 255, 92, 59); // Se realiza el mapeo para el led amarillo y los ángulos de giro en este rango para el servo
+    ledcWrite(canalVerde, dutycycleV); // Control del brillo del led amarillo con el pwm
+    ledcWrite(canalAmarillo, dutycycleA);
+    ledcWrite(canalRojo, dutycycleR);
+    }
+
+    else if (temperatura >= 21.0 && temperatura < 37.5) { //Se establece el rango de temperaturas para el led rojo y los grados de giro totales hasta 180 para el servo
+    dutycycleR = map(temperatura, 21.0, 37.5, 77, 255); 
+    dutycycleV = 0;
+    dutycycleA = 0;
+    Serial.print(dutycycleR);
+    Serial.println(" ");
+    giroServo = map(dutycycleR, 77, 255, 58, 25); // Mapeo del giro del servo con respecto al brillo para el led rojo
+    ledcWrite(canalVerde, dutycycleV); 
+    ledcWrite(canalAmarillo, dutycycleA);
+    ledcWrite(canalRojo, dutycycleR); // Control del brillo del led rojo con el pwm
+    }
+
+    io.run(); // Envío de datos de temperatura obtenidos a servidor de Adafruit
+    Serial.print("sending -> ");
+    Serial.println(temperatura);
+    tempSus->save(temperatura);
+    delay(100);
+
+
+  }
+  numero = decena; // Lectura de número o valor de decenas de la lectura de temperatura
+  digitalWrite(pinD0, LOW);
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, HIGH); // Se enciende el display2 para desplegar decenas
+  mostrarNumero(numero);
+  delay(5);
+
+  numero = unidad; // Lectura de número o valor de unidades de la lectura de temperatura
+  digitalWrite(pinD0, LOW);
+  digitalWrite(pinD1, HIGH); // Se enciende el display1 para desplegar unidades
+  digitalWrite(pinD2, LOW);
+  mostrarNumero(numero);
+  delay(5);
+
+  numero = decimal; // Lectura de número o valor de decimales de la lectura de temperatura
+  digitalWrite(pinD0, HIGH); // Se enciende el display0 para desplegar decimales
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, LOW);
+  mostrarNumero(numero);
+  delay(5); // Delays menores al tiempo de reacción humano para separar el encendido y apagado simultaneo de los displays para mostar el número
+
+  digitalWrite(pinD0, LOW); // Se apagan todos para evitar valor desplegado al subir el codigo a Adafruit
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, LOW);
+  delay(5);
+
+  ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_4, giroServo); // Se asignan valores de velocidad alta para el funcionamiento, el canal de PWM, y el angulo de giro
+  ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_4);
+
+  lastestadoM = estadoM; // Actualiza el estado previo del botón
+  delay(5); // Pequeña pausa para evitar rebotes del botón
+}
+
+void configurarPWM(void) // Función para manejo de leds con PWM, con el canal, la frecuencia y la resolución
+{
+
+ledcSetup(canalRojo, freqPWM, resolution);
+ledcSetup(canalVerde, freqPWM1, resolution);
+ledcSetup(canalAmarillo, freqPWM2, resolution);
+
+ledcAttachPin(pinRojo, canalRojo); // Asignación a los pines de los canales con los pines del ESP32
+ledcAttachPin(pinVerde, canalVerde);
+ledcAttachPin(pinAmarillo, canalAmarillo);
+}
+
+void configurarDisplays(void) // Función de definición para el set up de los pines del ESP32 como salidas para los segmentos de los displays
+{
+
+pinMode(pinA, OUTPUT);
+pinMode(pinB, OUTPUT);
+pinMode(pinC, OUTPUT);
+pinMode(pinD, OUTPUT);
+pinMode(pinE, OUTPUT);
+pinMode(pinF, OUTPUT);
+pinMode(pinG, OUTPUT);
+
+digitalWrite(pinA, LOW); // En el set up, todos los segmentos están apagados
+digitalWrite(pinB, LOW);
+digitalWrite(pinC, LOW);
+digitalWrite(pinD, LOW);
+digitalWrite(pinE, LOW);
+digitalWrite(pinF, LOW);
+digitalWrite(pinG, LOW);
+
+}
+
+void mostrarNumero(int numero) { //Función para lectura de dígito de decena, unidad y decimal y escritura en los displays pormedio de los cases y el switch del digito recibido
+    switch (numero) {
+        case 0:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, LOW);
+            break;
+        case 1:
+            digitalWrite(pinA, LOW);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, LOW);
+            break;
+        case 2:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, LOW);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 3:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 4:
+            digitalWrite(pinA, LOW);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 5:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, LOW);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 6:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, LOW);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 7:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, LOW);
+            digitalWrite(pinG, LOW);
+            break;
+        case 8:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, HIGH);
+            digitalWrite(pinE, HIGH);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+        case 9:
+            digitalWrite(pinA, HIGH);
+            digitalWrite(pinB, HIGH);
+            digitalWrite(pinC, HIGH);
+            digitalWrite(pinD, LOW);
+            digitalWrite(pinE, LOW);
+            digitalWrite(pinF, HIGH);
+            digitalWrite(pinG, HIGH);
+            break;
+    }
+}
