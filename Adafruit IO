@@ -1,0 +1,23 @@
+AdafruitIO_Feed *tempSus = io.feed("Sensor de Temperatura"); // Asignación del feed "Sensor de Temperatura" de Adafruit al codigo
+ 
+while(! Serial); // Se espera que se abra el monitor serial
+
+  Serial.print("Connecting to Adafruit IO"); // Se imprime el mensaje de bienvenida de conexión a Adafruit
+
+  io.connect(); // Función para conectar a Adafruit
+
+  while(io.status() < AIO_CONNECTED) { // Pausa para la conexión
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println();
+  Serial.println(io.statusText()); // Conexión exitosa
+
+}
+
+  io.run(); // Envío de datos de temperatura obtenidos a servidor de Adafruit
+  Serial.print("sending -> ");
+  Serial.println(temperatura);
+  tempSus->save(temperatura);
+  delay(100);
