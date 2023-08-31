@@ -1,0 +1,32 @@
+  numero = decena; // Lectura de número o valor de decenas de la lectura de temperatura
+  digitalWrite(pinD0, LOW);
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, HIGH); // Se enciende el display2 para desplegar decenas
+  mostrarNumero(numero);
+  delay(5);
+
+  numero = unidad; // Lectura de número o valor de unidades de la lectura de temperatura
+  digitalWrite(pinD0, LOW);
+  digitalWrite(pinD1, HIGH); // Se enciende el display1 para desplegar unidades
+  digitalWrite(pinD2, LOW);
+  mostrarNumero(numero);
+  delay(5);
+
+  numero = decimal; // Lectura de número o valor de decimales de la lectura de temperatura
+  digitalWrite(pinD0, HIGH); // Se enciende el display0 para desplegar decimales
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, LOW);
+  mostrarNumero(numero);
+  delay(5); // Delays menores al tiempo de reacción humano para separar el encendido y apagado simultaneo de los displays para mostar el número
+
+  digitalWrite(pinD0, LOW); // Se apagan todos para evitar valor desplegado al subir el codigo a Adafruit
+  digitalWrite(pinD1, LOW);
+  digitalWrite(pinD2, LOW);
+  delay(5);
+
+  ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_4, giroServo); // Se asignan valores de velocidad alta para el funcionamiento, el canal de PWM, y el angulo de giro
+  ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_4);
+
+  lastestadoM = estadoM; // Actualiza el estado previo del botón
+  delay(5); // Pequeña pausa para evitar rebotes del botón
+}
